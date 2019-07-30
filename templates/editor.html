@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Audio List{% endblock %}
+i{% block head %}
+     {{ super() }}
+{% endblock %}
+{% block content %}
+	<body>
+		<div class="container-fluid">
+         <div class="editor">
+         <form method="post" action="">
+            <div class="md-form">
+					<div class="row">
+						<div class="col-lg-11 text-right">
+                     <button type="submit" id="transcribe" name="button" value="transcribe" class="btn btn-info">Transcribe</button>
+                     <button type="submit" id="save" name="button" value="save" class="btn btn-primary">Save</button>
+                  </div>
+					</div>
+               <div class="form-group" style="padding-top:2%">
+                  
+                  <textarea name="text" id="form7" style="font-family:'Eczar', serif;font-size:20px" class="md-textarea form-control" rows="5" no-auto-shrink> {{response}} </textarea>
+               </div>
+            </div>
+         </form>
+         </div> 
+         <div class="audio" style="padding-top:10%">
+				<audio controls>
+					<source src="  
+               https://storage.cloud.google.com/barricade_transcript/Bar_1.wav" type="audio/wav">
+					Your browser does not support the audio element.
+				</audio>
+         </div>
+      </div>
+
+      <script>
+      $(document).ready(function(){
+         $("#transcribe").click(function(){
+				$.ajax({
+					type:'post',
+					url:'/edit',
+					async:'asynchronous',
+               contentType: "application/json; charset=utf-8",
+               dataType: "json",
+					success: function(data) {
+                 $("#form7").val(data);
+					},
+					error: function(request, status, error) {
+					  console.log("Error: " + error)
+					}
+				});
+        });
+      });
+
+      </script> 
+
+	</body>
+
+{% endblock %}
