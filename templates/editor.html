@@ -24,9 +24,9 @@ i{% block head %}
          </div> 
          <div class="audio" style="padding-top:10%">
 				<audio controls>
-					<source src="  
-               https://storage.cloud.google.com/barricade_transcript/Bar_1.wav" type="audio/wav">
-					Your browser does not support the audio element.
+					<source src="{{url}}" type="audio/wav">
+               
+					Your browser does not support the audio element. {{url}}
 				</audio>
          </div>
       </div>
