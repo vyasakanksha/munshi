@@ -40,9 +40,7 @@ $(document).ready(function(){
          },
 			success: function(response) {
 			  console.log('success')
-		     fileInputText.style.display = "none"; // hide filename
-            $("#upload").prop('disabled', false); // enable button
-            $(fileInput).prop('disabled', false); // enable button
+           window.location.reload();
 			},
 			error: function(error) {
 			  console.log(error)
