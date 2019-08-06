@@ -1,11 +1,12 @@
-import logging, json
+import logging, json, datetime, re
+from itertools import groupby, chain
 from flask import current_app, Flask, render_template, request, jsonify, make_response
 import crud, transcribe_async as transcribe
 
 app = Flask(__name__)
 
 bucket = "barricade_transcript"
-project_name = "bar"
+project_name = "barricade"
 
 # Configure logging
 if not app.testing:
@@ -17,35 +18,6 @@ def home():
    files = crud.blobs_list(bucket)
    audio_files = [x for x,y in files if y == '.wav']
    return render_template('home.html', audio_files=audio_files)
-
-@app.route("/record", methods=['GET', 'POST'])
-def record_audio():
-   return render_template('record_audio.html')
-
-@app.route("/upload", methods=['GET', 'POST'])
-def upload_audio():
-	files = crud.blobs_list(bucket)
-	audio_files = [x for x,y in files if y == '.wav']
-
-   # generate the name for the next audio file in series by incementing the number
-	if audio_files:
-		res1 = list(map(lambda sub:int(''.join([ele for ele in sub if ele.isnumeric()])), audio_files))
-		res2 = list(map(lambda sub:str(''.join([ele for ele in sub if not ele.isnumeric()])), audio_files))
-		filename = "{}{}".format(res2[0], str(max(res1)+1))
-	else:
-		filename = "{}{}".format(project_name, 1)
-
-	if request.method == 'POST':
-		stat = request.files['data']
-		stat.save("copy.wav")
-		metadata = {'status': 0} # set status to new
-		try:
-			upload = crud.upload_blob(bucket, "copy.wav", stat.filename, metadata)
-			return json.dumps({'status':'OK'})
-		except Exception as e:
-			return jsonify({'error' : e})
-	return render_template('upload_audio.html', filename=filename)
-
 
 @app.route("/edit/<filename>", methods=['GET', 'POST'])
 def edit(filename):
@@ -70,6 +42,57 @@ def edit(filename):
          transcript = transcribe.transcribe_gcs("gs://{}/{}".format(bucket, audio_filename))
          response = " ".join(transcript)
    return render_template('editor.html', url = audio_url, response = response)
+
+
+@app.route("/record", methods=['GET', 'POST'])
+def record_audio():
+   return render_template('record_audio.html')
+
+
+@app.route("/upload", methods=['GET', 'POST'])
+def upload_audio():
+   files = crud.blobs_list(bucket)
+   audio_files = [x for x,y in files if y == '.wav']
+   grouped = [groupby(x, str.isdigit) for x in audio_files]
+
+   # generate the name for the next audio file in series by incementing the number
+   if audio_files:
+      filenumber = get_filenumber(audio_files)
+
+      filename_temp = ''.join(chain.from_iterable("{}" if k else g for k,g in grouped[0]))
+
+      filename = filename_temp.format(max(filenumber)+1, datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
+   else:
+      filename = "{}{}_{}".format(project_name, 1, datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
+
+   if request.method == 'POST':
+      stat = request.files['data']
+      stat1 = request.form['filename']
+      stat.save("copy.wav")
+      metadata = {'status': 0} # set status to new
+      try:
+         upload = crud.upload_blob(bucket, "copy.wav", stat.filename, metadata)
+         return json.dumps({'status':'OK'})
+      except Exception as e:
+         return jsonify({'error' : e})
+   return render_template('upload_audio.html', filename=filename)
+
+
+def get_filenumber(audio_files):
+   # generate the name for the next audio file in series by incementing the number
+   num_lst = []
+
+   if audio_files:
+      grouped = [groupby(x, str.isdigit) for x in audio_files]
+
+      for group in grouped:
+         tmp_lst = []
+         for key, grp in group:
+            if key:
+               tmp_lst.append("".join(list(grp)))
+         num_lst.append(int(tmp_lst[0]))
+   return num_lst
+
       
 if __name__ == "__main__":
 	app.run()
