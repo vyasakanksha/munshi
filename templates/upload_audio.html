@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Audio List{% endblock %}
+{% block head %}
+     {{ super() }}
+{% endblock %}
+{% block content %}
+	<body>
+		<div class="container-fluid">
+         <div class="row">
+            <div class="audio-div">
+               <span class="dot audio-dot">
+                  <div class="audio-info">
+                     <label class="image_input_button mdl-button mdl-js-button mdl-button--fab mdl-button--mini-fab mdl-js-ripple-effect mdl-button--colored">
+                        <i class="material-icons audio-icon" style="color: red">file_upload</i>
+                        <input id="file_input_file" accept=".wav" class="none" type="file" style="display:none" />
+                     </label>
+                  </div>
+               </span>
+            </div>    
+         </div>    
+         <div class="row">
+            <div class="form-row audio-btm">
+                  <input class="file_input_text mdl-textfield__input" type="text" value={{ filename }} id="file_input_text" style="display:none"/> 
+								<label for="file_input_text">.wav</label>
+            </div>   
+         </div>
+         <div class="row"> 
+            <button type="submit" id="upload" name="button" value="upload" class="btn btn-info audio-btm" style="display:block">Upload</button>
+         </div>
+
+         <script src="static/js/upload.js"></script>
+
+         </div>
+	</body>
+
+{% endblock %}
