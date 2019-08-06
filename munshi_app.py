@@ -15,17 +15,28 @@ if not app.testing:
 # Add a root route. This is currently set to home.html
 @app.route("/", methods=['GET', 'POST'])
 def home():
+   audio_files = []
    files = crud.blobs_list(bucket)
-   audio_files = [x for x,y in files if y == '.wav']
+   if files:
+      audio_files = sorted(set([x.split("_")[0] for x,y in files if y == '.wav']))
    return render_template('home.html', audio_files=audio_files)
 
 @app.route("/edit/<filename>", methods=['GET', 'POST'])
 def edit(filename):
-   audio_filename = "{}.wav".format(filename)
+   audio_urls = []
+
+   files = crud.blobs_list(bucket)
+   audio_files = [x for x,y in files if (y == '.wav' and filename in x)]
+
+   for af in audio_files:
+      audio_filename = "{}.wav".format(af)
+      audio_urls.append("https://storage.cloud.google.com/{}/{}".format(bucket, audio_filename))
+
    text_filename = "{}.json".format(filename)
    item = crud.blob_info(bucket, audio_filename)
-   audio_url = "https://storage.cloud.google.com/{}/{}".format(bucket, audio_filename)
    text_url = "https://storage.cloud.google.com/{}/{}".format(bucket, text_filename)
+
+   print(audio_urls)
    
    response = ""
    if crud.blob_exists(bucket, text_filename):
@@ -41,7 +52,7 @@ def edit(filename):
       if request.form['button'] == 'transcribe':
          transcript = transcribe.transcribe_gcs("gs://{}/{}".format(bucket, audio_filename))
          response = " ".join(transcript)
-   return render_template('editor.html', url = audio_url, response = response)
+   return render_template('editor.html', audio_urls = audio_urls, response = response)
 
 
 @app.route("/record", methods=['GET', 'POST'])
@@ -67,7 +78,6 @@ def upload_audio():
 
    if request.method == 'POST':
       stat = request.files['data']
-      stat1 = request.form['filename']
       stat.save("copy.wav")
       metadata = {'status': 0} # set status to new
       try:
