@@ -16,10 +16,20 @@ if not app.testing:
 @app.route("/", methods=['GET', 'POST'])
 def home():
    audio_files = []
+   audio_data = []
+   status = 'info'
    files = crud.blobs_list(bucket)
    if files:
-      audio_files = sorted(set([x.split("_")[0] for x,y in files if y == '.wav']))
-   return render_template('home.html', audio_files=audio_files)
+      audio_files = sorted(set([x.split("_")[0] for x,y in files if y == '.wav']), reverse=True)
+      for a in audio_files:
+         textfile = "{}.json".format(a)
+         if (a, '.json') not in files:
+            status = 'dark'
+         else:
+            blob = crud.blob_info(bucket, textfile)
+            status = ('info' if int(blob.metadata['status']) is 0 else 'dark') or ('success' if int(blob.metadata['status']) is 1 else 'dark')
+         audio_data.append((a, status))
+   return render_template('home.html', audio_files=audio_data)
 
 @app.route("/edit/<filename>", methods=['GET', 'POST'])
 def edit(filename):
@@ -33,7 +43,6 @@ def edit(filename):
       audio_urls.append("https://storage.cloud.google.com/{}/{}".format(bucket, audio_filename))
 
    text_filename = "{}.json".format(filename)
-   item = crud.blob_info(bucket, audio_filename)
    text_url = "https://storage.cloud.google.com/{}/{}".format(bucket, text_filename)
 
    print(audio_urls)
@@ -48,10 +57,17 @@ def edit(filename):
          response = request.form['text']
          with open('copy.json', 'w', encoding='utf-8') as f:
             json.dump(response, f, ensure_ascii=False)
-         crud.upload_blob(bucket, "copy.json", text_filename)
+         metadata = {'status': 0} # set status to in progress
+         crud.upload_blob(bucket, "copy.json", text_filename, metadata)
       if request.form['button'] == 'transcribe':
          transcript = transcribe.transcribe_gcs("gs://{}/{}".format(bucket, audio_filename))
          response = " ".join(transcript)
+      if request.form['button'] == 'done':
+         response = request.form['text']
+         blob = crud.blob_info(response)
+         blob.metadata = {'status': 1} # set status to in progress
+         blob.patch()
+
    return render_template('editor.html', audio_urls = audio_urls, response = response)
 
 
@@ -79,9 +95,8 @@ def upload_audio():
    if request.method == 'POST':
       stat = request.files['data']
       stat.save("copy.wav")
-      metadata = {'status': 0} # set status to new
       try:
-         upload = crud.upload_blob(bucket, "copy.wav", stat.filename, metadata)
+         upload = crud.upload_blob(bucket, "copy.wav", stat.filename)
          return json.dumps({'status':'OK'})
       except Exception as e:
          return jsonify({'error' : e})
