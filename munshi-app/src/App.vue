@@ -37,20 +37,21 @@ export default {
   methods: {
     async AudioRecorded() {
         if(!this.isRecording) {
-          console.log("Start Recoding")
           let stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+
           var recorder = new RecordRTCPromisesHandler(stream, {
-              type: 'video'
+              type: 'audio'
           });
           recorder.startRecording();
-          this.isRecording = false;
-          
+          this.isRecording = true;
+          console.log("Start Recoding")
         } else if(this.isRecording) {
           this.isRecording = false;
-          console.log("isRecording", this.isRecording)
-
           await recorder.stopRecording();
-          // let blob = await recorder.getBlob();
+          console.log("Stop Recoding")
+
+          let blob = await recorder.getBlob();
+          console.log(blob)
         }
     },
   }
