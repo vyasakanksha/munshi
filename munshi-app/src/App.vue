@@ -61,13 +61,15 @@ export default {
       });
     },
     async stopRecord() {
-      console.log(this)
       console.log("Stop Recoding")
       await this.recorder.stopRecording()
       let blob = await this.recorder.getBlob();
       let url = URL.createObjectURL(blob);
-      console.log("url", url)
       this.isRecording = false;
+      console.log(url)
+      // window.open(url) test that the reording works!!
+
+
       this.recorder.destroy()
       this.recorder.stream.getTracks().forEach(track => track.stop())
       this.recorder = null;
