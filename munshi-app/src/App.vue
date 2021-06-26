@@ -35,26 +35,44 @@ export default {
     Editor,
   },
   methods: {
-    async AudioRecorded() {
-        if(!this.isRecording) {
-          let stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
-
-          var recorder = new RecordRTCPromisesHandler(stream, {
-              type: 'audio'
-          });
-          recorder.startRecording();
-          this.isRecording = true;
-          console.log("Start Recoding")
-        } else if(this.isRecording) {
-          this.isRecording = false;
-          await recorder.stopRecording();
-          console.log("Stop Recoding")
-
-          let blob = await recorder.getBlob();
-          console.log(blob)
-        }
+    AudioRecorded() {
+      if(this.isRecording) {
+        this.stopRecord()
+      } else {
+        this.startRecord()
+      }
     },
-  }
+    async startRecord() {
+      var device = navigator.mediaDevices.getUserMedia({audio: true})
+      
+      device.then((stream) => {
+        this.recorder = new RecordRTCPromisesHandler(stream, {
+          mimeType: 'audio/webm'
+        }),
+        this.recorder.startRecording();
+        this.recorder.stream = stream
+        this.isRecording = true;
+        console.log(this)
+        console.log("Start Recoding")
+      })
+      .catch(function(error) {
+        alert("Unable to capture your audio device. Please check console logs.");
+        console.error(error);
+      });
+    },
+    async stopRecord() {
+      console.log(this)
+      console.log("Stop Recoding")
+      await this.recorder.stopRecording()
+      let blob = await this.recorder.getBlob();
+      let url = URL.createObjectURL(blob);
+      console.log("url", url)
+      this.isRecording = false;
+      this.recorder.destroy()
+      this.recorder.stream.getTracks().forEach(track => track.stop())
+      this.recorder = null;
+    },
+  },
 }
 </script>
 
