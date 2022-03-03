@@ -5,15 +5,20 @@
     theme="snow"
     :toolbar="toolbarOptions"
     v-model="contentDelta" contentType="delta" />
+    <AudioRecorder />
+
   </div>
 </template>
 
 <script lang="ts">
 import { ref, defineComponent } from 'vue'
 import { QuillEditor, Delta } from '@vueup/vue-quill'
+import AudioRecorder from './AudioStream.vue';
+
 export default defineComponent({
   components: {
     QuillEditor,
+    AudioRecorder,
   },
   setup: () => {
     const contentDelta = ref<Delta>(
